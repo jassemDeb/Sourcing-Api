@@ -21,6 +21,16 @@ class AdminAdditionnalRepository extends ServiceEntityRepository
         parent::__construct($registry, AdminAdditionnal::class);
     }
 
+    public function findByEmail($email): ?AdminAdditionnal
+    {
+        return $this->createQueryBuilder('a')
+            ->andWhere('a.email = :email')
+            ->setParameter('email', $email)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+
 //    /**
 //     * @return AdminAdditionnal[] Returns an array of AdminAdditionnal objects
 //     */

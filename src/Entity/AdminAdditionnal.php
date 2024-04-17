@@ -18,4 +18,10 @@ class AdminAdditionnal extends User
     {
         return $this->id;
     }
+
+    public function setId(int $id): self
+    {
+        $this->id = $id;
+        return $this;
+    }
 }

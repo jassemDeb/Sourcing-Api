@@ -18,6 +18,10 @@ use Symfony\Component\Mime\Email;
 #[Route('/api', name: 'api_')]
 class RegistrationController extends AbstractController
 {
+
+
+
+
     #[Route('/register', name: 'register', methods: 'post')]
     public function index(MailerInterface $mailer, ManagerRegistry $doctrine, Request $request, UserPasswordHasherInterface $passwordHasher, UserRepository $userRepository): JsonResponse
     {
@@ -52,6 +56,19 @@ class RegistrationController extends AbstractController
                 'message' => 'Ce email existe déjà',
             ]);
         } else {
+            $user->setPassword($hashedPassword)
+                 ->setEmail($email)
+                 ->setUsername($username)
+                 ->setFullname($fullname)
+                 ->setUsername($username)
+                 ->setCreatedAt($createdAt)
+                 ->setUpdatedAt($updatedAt)
+                 ->setIsAdmin($isAdmin)
+                 ->setRoles($roles);
+            $em->persist($user);
+            $em->flush();
+
+            $id = $user->getId();
             if ($isAdmin) {
                 $admin->setPassword($hashedPassword)
                  ->setEmail($email)
@@ -78,17 +95,7 @@ class RegistrationController extends AbstractController
             $em->persist($user_add);
             $em->flush();
             }
-            $user->setPassword($hashedPassword)
-                 ->setEmail($email)
-                 ->setUsername($username)
-                 ->setFullname($fullname)
-                 ->setUsername($username)
-                 ->setCreatedAt($createdAt)
-                 ->setUpdatedAt($updatedAt)
-                 ->setIsAdmin($isAdmin)
-                 ->setRoles($roles);
-            $em->persist($user);
-            $em->flush();
+            
 
            // $email = (new Email())
            //  ->from('hello@example.com')

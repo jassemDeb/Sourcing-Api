@@ -145,8 +145,7 @@ class UsersController extends AbstractController
         
         $em = $doctrine->getManager();
         $user = $userRepository->find($id);
-        $email_check = $user->getEmail();
-        
+
 
         if (!$user) {
             return $this->json([

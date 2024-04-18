@@ -67,8 +67,8 @@ class RegistrationController extends AbstractController
                  ->setRoles($roles);
             $em->persist($user);
             $em->flush();
-
-            $id = $user->getId();
+            
+            
             if ($isAdmin) {
                 $admin->setPassword($hashedPassword)
                  ->setEmail($email)
@@ -79,8 +79,8 @@ class RegistrationController extends AbstractController
                  ->setUpdatedAt($updatedAt)
                  ->setIsAdmin($isAdmin)
                  ->setRoles($roles);
-            $em->persist($admin);
-            $em->flush();
+                $em->persist($admin);
+                $em->flush();
 
             } else {
                 $user_add->setPassword($hashedPassword)
@@ -96,16 +96,7 @@ class RegistrationController extends AbstractController
             $em->flush();
             }
             
-
-           // $email = (new Email())
-           //  ->from('hello@example.com')
-           //  ->to('you@example.com')
-            // ->subject('Time for Symfony Mailer!')
-           //  ->text('Sending emails is fun again!');
-
-       // $mailer->send($email);
-
-            return $this->json(['message' => 'Registered Successfully and Email is sended']);
+            return $this->json(['message' => 'Registered Successfully and Email is sended', 'id' => $id]);
         }
         
    

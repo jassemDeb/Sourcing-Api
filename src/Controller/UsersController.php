@@ -91,14 +91,7 @@ class UsersController extends AbstractController
     
 
 
-    #[Route('/users', name: 'app_users')]
-    public function index(): JsonResponse
-    {
-        return $this->json([
-            'message' => 'Welcome to your new controller!',
-            'path' => 'src/Controller/UsersController.php',
-        ]);
-    }
+  
 
     #[Route('/deleteUser/{id}', name: 'delete_user' ,methods: 'delete')]
     public function deleteUserById(Request $request, EntityManagerInterface $entityManager, $id): JsonResponse

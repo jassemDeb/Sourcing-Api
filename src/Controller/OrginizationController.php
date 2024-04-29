@@ -104,6 +104,17 @@ class OrginizationController extends AbstractController
         return new JsonResponse($jsonData);
 
     }
+    #[Route('/orgbyid/{id}', name: 'orglistid', methods: 'get')]
+    public function orglistById ($id) : JsonResponse
+    {
+        $org_type_repo = $this->entityManager->getRepository(CoreOrganizationType::class);
+        $org = $org_type_repo->find($id);
+
+        $jsonData = $this->serializeUser($org);
+
+        return new JsonResponse($jsonData);
+
+    }
 
     #[Route('/deleteOrg/{id_type}', name: 'delete_org' ,methods: 'delete')]
     public function deleteOrgById(Request $request, $id_type): JsonResponse

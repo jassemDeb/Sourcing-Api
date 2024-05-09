@@ -215,7 +215,7 @@ class WidgetController extends AbstractController
 
         $widget->setCoreOrganizationTypeId($coreOrganizationType)
                ->setDescriptionEn($desc_eng)
-               ->setIsDefault(false)
+               ->setIsDefault(true)
                ->setWidgetConditions('')
                ->setDescriptionFr($desc_fr)
                ->setWidgetUrl($wid_url)
@@ -239,5 +239,32 @@ class WidgetController extends AbstractController
         
 
         return $this->json(['message' => 'Widget updated']);
+    }
+
+    #[Route('/widgetbyType/{organizationType}', name: 'widgetbyType', methods: 'get')]
+    public function WidgetType(ManagerRegistry $doctrine, string $organizationType): JsonResponse
+    {
+        $em = $doctrine->getManager();
+
+        $organizationRepository = $em->getRepository(CoreOrganizationType::class);
+        $organizationTypeEntity  = $organizationRepository->findOneBy(['type' => $organizationType]);
+
+
+        if ($organizationTypeEntity) {
+            $dashboardWidgets = $organizationTypeEntity->getDashboardWidgets();
+
+            $dashboardWidgetsArray = [];
+
+            foreach ($dashboardWidgets as $dashboardWidget) {
+                $dashboardWidgetsArray[] = [
+                    'id' => $dashboardWidget->getId(),
+                    'widget_type' => $dashboardWidget->getWidgetType()
+                ];
+            }
+            return new JsonResponse($dashboardWidgetsArray);
+        } else {
+            return new JsonResponse(['error' => 'Organization type not found'], JsonResponse::HTTP_NOT_FOUND);
+        }
+
     }
 }

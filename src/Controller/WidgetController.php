@@ -16,6 +16,8 @@ use App\Entity\CoreOrganizationType;
 #[Route('/api', name: 'api_')]
 class WidgetController extends AbstractController
 {
+
+    //ADD new Widget
     #[Route('/addwidget', name: 'addwidget', methods: 'post')]
     public function addwidget(ManagerRegistry $doctrine, Request $request): JsonResponse
     {
@@ -70,6 +72,7 @@ class WidgetController extends AbstractController
         return $this->json(['message' => 'Widget added']);
     }
 
+    //GET All Widgets
     #[Route('/widgets', name: 'widgets', methods: 'get')]
     public function widgetlist (ManagerRegistry $doctrine) : JsonResponse
     {
@@ -84,6 +87,8 @@ class WidgetController extends AbstractController
 
     }
 
+
+    //Widget By ID
     #[Route('/widgetsById/{id}', name: 'widgetsById', methods: 'get')]
     public function widgetlistById (ManagerRegistry $doctrine, $id) : JsonResponse
     {
@@ -97,7 +102,7 @@ class WidgetController extends AbstractController
         return new JsonResponse($jsonData);
 
     }
-
+    //WidgetConfig By ID (Dashboard Widget)
     #[Route('/widgetconfig/{id}', name: 'widgetconfig', methods: 'get')]
     public function widgetconfiglist (ManagerRegistry $doctrine, $id) : JsonResponse
     {
@@ -106,7 +111,7 @@ class WidgetController extends AbstractController
 
         $widget_dash_config_repo = $em->getRepository(DashboardConfigurationWidget::class);
 
-        $widget_config = $widget_dash_config_repo->findOneBy(['dashboard_widget' => $id]);;
+        $widget_config = $widget_dash_config_repo->findOneBy(['dashboard_widget' => $id]);
 
         $jsonData = $this->serializeWidgetconfig($widget_config);
 
@@ -125,6 +130,7 @@ class WidgetController extends AbstractController
         return $serializedWidgets;
     }
 
+    //Serialize single widget
     private function serializeWidget(DashboardWidget $widget): array
     {
 
@@ -141,6 +147,8 @@ class WidgetController extends AbstractController
 
         ];
     }
+
+    //Serialize widgets
     private function serializeWidgetconfig(DashboardConfigurationWidget $widget_config): array
     {
 
@@ -156,6 +164,7 @@ class WidgetController extends AbstractController
         ];
     }
 
+    //Delete widget
     #[Route('/deleteWidget/{id}', name: 'widget' ,methods: 'delete')]
     public function deleteWidgetById(Request $request, $id, ManagerRegistry $doctrine): JsonResponse
     {
@@ -185,6 +194,7 @@ class WidgetController extends AbstractController
 
     }
 
+    //Update Widget
     #[Route('/updatewidget/{id}', name: 'updatewidget', methods: 'put')]
     public function updatewidget(ManagerRegistry $doctrine, Request $request, $id): JsonResponse
     {
@@ -241,30 +251,89 @@ class WidgetController extends AbstractController
         return $this->json(['message' => 'Widget updated']);
     }
 
+    //GET widgets By organization type
     #[Route('/widgetbyType/{organizationType}', name: 'widgetbyType', methods: 'get')]
     public function WidgetType(ManagerRegistry $doctrine, string $organizationType): JsonResponse
     {
         $em = $doctrine->getManager();
-
+    
         $organizationRepository = $em->getRepository(CoreOrganizationType::class);
-        $organizationTypeEntity  = $organizationRepository->findOneBy(['type' => $organizationType]);
-
-
+        $organizationTypeEntity = $organizationRepository->findOneBy(['type' => $organizationType]);
+    
         if ($organizationTypeEntity) {
             $dashboardWidgets = $organizationTypeEntity->getDashboardWidgets();
-
+    
             $dashboardWidgetsArray = [];
-
+    
             foreach ($dashboardWidgets as $dashboardWidget) {
+                $configurationWidgetId = null;
+                $configurationWidgets = $dashboardWidget->getDashboardConfigurationWidgetId();
+    
+                foreach ($configurationWidgets as $configurationWidget) {
+                    $configurationWidgetId = $configurationWidget->getId();
+                    break; // Stop iteration after the first ID
+                }
+    
                 $dashboardWidgetsArray[] = [
-                    'id' => $dashboardWidget->getId(),
-                    'widget_type' => $dashboardWidget->getWidgetType()
+                    'id' => $configurationWidgetId,
+                    'widget_type' => $dashboardWidget->getWidgetType(),
                 ];
             }
+    
             return new JsonResponse($dashboardWidgetsArray);
         } else {
             return new JsonResponse(['error' => 'Organization type not found'], JsonResponse::HTTP_NOT_FOUND);
         }
+    }
+    
+    
+
+
+    //update widget config
+    #[Route('/updatewidgetConfig/{id}', name: 'updatewidgetConfig', methods: 'put')]
+    public function updatewidgetConfig(ManagerRegistry $doctrine, Request $request, $id): JsonResponse
+    {
+        $em = $doctrine->getManager();
+        $decoded = json_decode($request->getContent());
+
+        $name_fr = $decoded->name_fr;
+        $name_eng = $decoded->name_eng;
+        $wid_style = $decoded->wid_style;
+        $wid_width = $decoded->wid_width;
+        $wid_height = $decoded->wid_height;
+        $wid_rank = $decoded->wid_rank;
+
+        $widget_dash_config_repo = $em->getRepository(DashboardConfigurationWidget::class);
+        $widget_config = $widget_dash_config_repo->find($id);
+        
+
+        $widget_config->setNameFr($name_fr)
+                      ->setNameEn($name_eng)
+                      ->setWidgetStyle($wid_style)
+                      ->setWidgetWidth($wid_width )
+                      ->setWidgetHeight($wid_height)
+                      ->setWidgetRank( $wid_rank);
+        $em->persist($widget_config);
+        $em->flush();
+        
+
+        return $this->json(['message' => 'Widget configuration updated']);
+    }
+
+    // get widget config by id (dashboard configuration)
+    #[Route('/widgetconfigByID/{id}', name: 'widgetconfigByID', methods: 'get')]
+    public function widgetconfigByID (ManagerRegistry $doctrine, $id) : JsonResponse
+    {
+        $em = $doctrine->getManager();
+
+
+        $widget_dash_config_repo = $em->getRepository(DashboardConfigurationWidget::class);
+
+        $widget_config = $widget_dash_config_repo->find($id);
+
+        $jsonData = $this->serializeWidgetconfig($widget_config);
+
+        return new JsonResponse($jsonData);
 
     }
 }

@@ -19,8 +19,8 @@ class DashboardConfigurationWidget
     #[ORM\Column(length: 255)]
     private ?string $name_en = null;
 
-    #[ORM\Column(length: 255)]
-    private ?string $widget_style = null;
+    #[ORM\Column(type: 'json', nullable: true)]
+    private ?array $widget_style = null;
 
     #[ORM\Column(length: 255)]
     private ?string $widget_width = null;
@@ -66,12 +66,12 @@ class DashboardConfigurationWidget
         return $this;
     }
 
-    public function getWidgetStyle(): ?string
+    public function getWidgetStyle(): ?array
     {
         return $this->widget_style;
     }
 
-    public function setWidgetStyle(string $widget_style): static
+    public function setWidgetStyle(?array $widget_style): static
     {
         $this->widget_style = $widget_style;
 

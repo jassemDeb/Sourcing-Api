@@ -6,46 +6,25 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
-use Doctrine\Persistence\ManagerRegistry;
-use App\Entity\User;
-use App\Repository\UserRepository;
+use App\Service\AuthService;
 
 
 #[Route('/api', name: 'api_')]
 class LoginController extends AbstractController
 {
-    #[Route('/login', name: 'login', methods: 'post')]
-    public function index(ManagerRegistry $doctrine, Request $request, UserPasswordHasherInterface $passwordHasher, UserRepository $userRepository): JsonResponse
+
+    private $authService;
+
+    public function __construct(AuthService $authService)
     {
-        $em = $doctrine->getManager();
-        $decoded = json_decode($request->getContent());
-        $email = $decoded->email;
-        $password = $decoded->password;
+        $this->authService = $authService;
+    }
 
-        $user = $userRepository->findOneByEmail($email);
+    #[Route('/login', name: 'login', methods: 'post')]
+    public function index(Request $request): JsonResponse
+    {
 
-        if (!$user) {
-            return $this->json([
-                'message' => 'User not found. Please check your credentials.',
-            ]);
-        }
-
-        if (password_verify($password, $user->getPassword())) {
-            $roles = $user->getRoles();
-            $username = $user->getUsername();
-            return $this->json([
-                'message' => 'Success',
-                'role' => $roles,
-                'username' => $username
-                
-            ]);
-
-        } else {
-            return $this->json([
-                'message' => 'Failed to login. Please check your credentials.',
-            ]);
-        }
+        return $this->authService->Login($request);
 
     }
 }

@@ -10,14 +10,22 @@ use App\Entity\CoreOrganization;
 use App\Entity\CoreOrganizationType;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Repository\CoreOrganizationTypeRepository;
+use App\Entity\UserAdditionnal;
+use App\Repository\CoreOrganizationRepository;
+use App\Repository\UserAdditionnalRepository;
+
 
 class OrgService {
 
     private $doctrine;
+    private $coreOrganizationRepository;
+    private $userAdditionalRepository;
 
-    public function __construct(ManagerRegistry $doctrine)
+    public function __construct(ManagerRegistry $doctrine, CoreOrganizationRepository $coreOrganizationRepository, UserAdditionnalRepository $userAdditionnalRepository)
     {
         $this->doctrine = $doctrine;
+        $this->coreOrganizationRepository = $coreOrganizationRepository;
+        $this->userAdditionnalRepository = $userAdditionnalRepository;
     }
 
     private function serializeOrgs(array $orgs): array
@@ -29,6 +37,26 @@ class OrgService {
         }
 
         return $serializedOrgs;
+    }
+
+    private function serializeOrgsByName(array $orgs): array
+    {
+        $orgData = [];
+        foreach ($orgs as $org) {
+            $types = [];
+            foreach ($org->getCoreOrganizationTypes() as $type) {
+                $types[] = [
+                    'typeId' => $type->getId(),
+                    'typeName' => $type->getName(),
+                ];
+            }
+            $orgData[] = [
+                'id' => $org->getId(),
+                'name' => $org->getName(),
+                'types' => $types // Include types in the response
+            ];
+        }
+        return $orgData;
     }
 
     private function serializeOrg(CoreOrganizationType $org): array
@@ -82,14 +110,14 @@ class OrgService {
         return new JsonResponse(['message' => 'Organization added']);
     }
 
-    // GET ORGS
+    // GET ALL ORGS (type)
     public function orglist () : JsonResponse
     {
         $em = $this->doctrine->getManager();
         $org_type_repo = $em->getRepository(CoreOrganizationType::class);
         $orgs = $org_type_repo->findAll();
 
-        $jsonData = $this->serializeUsers($orgs);
+        $jsonData = $this->serializeOrgs($orgs);
 
         return new JsonResponse($jsonData);
 
@@ -110,6 +138,21 @@ class OrgService {
 
         return new JsonResponse($jsonData);
     }
+
+    // GET ORGS (name)
+    public function orgNameList(): JsonResponse
+    {
+        $em = $this->doctrine->getManager();
+        $orgRepository = $em->getRepository(CoreOrganization::class);
+        $orgs = $orgRepository->findAll();
+
+        $jsonData = $this->serializeOrgsByName($orgs);
+
+        return new JsonResponse($jsonData);
+    }
+
+
+    
 
     // DELETE ORG
     public function deleteOrgById($id_type): JsonResponse
@@ -183,6 +226,62 @@ class OrgService {
             'message' => 'Organization and associated entity updated successfully'
         ]);
     }
+
+    // ASSIGN ORG TO USER 
+    public function assignUserToOrganization($userAdditionnalId, $organizationId): JsonResponse
+    {
+        $em = $this->doctrine->getManager();
+    
+        $organization = $em->getRepository(CoreOrganization::class)->find($organizationId);
+        $userAdditionnal = $em->getRepository(UserAdditionnal::class)->find($userAdditionnalId);
+    
+        if (!$organization || !$userAdditionnal) {
+            return new JsonResponse(['status' => false, 'message' => 'Organization or User Additionnal not found'], 404);
+        }
+    
+        // Remove all current organization links before adding a new one
+        foreach ($userAdditionnal->getCoreOrganizations() as $existingOrg) {
+           $userAdditionnal->removeCoreOrganization($existingOrg);
+            $existingOrg->removeUserAdditionnalId($userAdditionnal);
+            $em->persist($existingOrg); // Persist changes to detach the existing organizations 
+        }
+    
+        // Add the new organization to the userAdditionnal
+        $userAdditionnal->addCoreOrganization($organization);
+        $organization->addUserAdditionnalId($userAdditionnal);
+    
+        $em->persist($userAdditionnal);
+        $em->persist($organization);
+        $em->flush();
+    
+        return new JsonResponse(['status' => true, 'message' => 'User Additionnal successfully assigned to the new organization'], 200);
+    }
+    
+    // GET ORG OF A USER
+    public function getOrganizationsByUserAdditionnalId($userAdditionnalId): JsonResponse
+    {
+        $em = $this->doctrine->getManager();
+        $userAdditionnal = $em->getRepository(UserAdditionnal::class)->find($userAdditionnalId);
+    
+        if (!$userAdditionnal) {
+            return new JsonResponse(['status' => false, 'message' => 'User Additionnal not found'], 404);
+        }
+    
+        $organizations = $userAdditionnal->getCoreOrganizations();
+        $orgData = [];
+    
+        foreach ($organizations as $organization) {
+            $orgData[] = [
+                'id' => $organization->getId(),
+                'name' => $organization->getName()
+            ];
+        }
+    
+        return new JsonResponse(['status' => true, 'data' => $orgData], 200);
+    }
+     
+    
+    
 
     
 }

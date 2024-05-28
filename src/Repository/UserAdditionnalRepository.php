@@ -21,10 +21,7 @@ class UserAdditionnalRepository extends ServiceEntityRepository
         parent::__construct($registry, UserAdditionnal::class);
     }
 
-    public function findByEmail($email)
-    {
-        return $this->findOneBy(['email' => $email]);
-    }
+
 
 //    /**
 //     * @return UserAdditionnal[] Returns an array of UserAdditionnal objects

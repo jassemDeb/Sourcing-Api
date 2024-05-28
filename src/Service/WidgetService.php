@@ -39,7 +39,7 @@ class WidgetService
         ];
     }
 
-    //Serialize widgets
+    //Serialize widgets Config
     private function serializeWidgetconfig(DashboardConfigurationWidget $widget_config): array
     {
 
@@ -55,8 +55,177 @@ class WidgetService
         ];
     }
 
- 
+    //Serialize widgets 
+    private function serializeWidgets(array $widgets): array
+    {
+        $serializedWidgets = [];
+
+        foreach ($widgets as $widget) {
+            $serializedWidgets[] = $this->serializeWidget($widget);
+        }
+
+        return $serializedWidgets;
+    }
+
+    // ADD WIDGET
     public function addwidget(Request $request): JsonResponse
+    {
+        $em = $this->doctrine->getManager();
+        $decoded = json_decode($request->getContent());
+    
+        // Existing code to fetch and set various parameters
+        $typeorg = $decoded->typeorg;
+        $typetrans = $decoded->typetrans;
+        $typewid = $decoded->typewid;
+        $wid_visi = $decoded->wid_visi;
+        $name_fr = $decoded->name_fr;
+        $name_eng = $decoded->name_eng;
+        $desc_fr = $decoded->desc_fr;
+        $desc_eng = $decoded->desc_eng;
+        $wid_url = $decoded->wid_url;
+    
+        $coreOrganizationType = $em->getRepository(CoreOrganizationType::class)->findOneBy(['type' => $typeorg]);
+        $coreOrganization = null;
+        if ($coreOrganizationType) {
+            $coreOrganizations = $coreOrganizationType->getCoreOrganizationId();
+            $coreOrganization = $coreOrganizations->first();
+        }
+    
+        $widget = new DashboardWidget();
+        $widget->setCoreOrganizationTypeId($coreOrganizationType)
+               ->setDescriptionEn($desc_eng)
+               ->setIsDefault(true)
+               ->setWidgetConditions('')
+               ->setDescriptionFr($desc_fr)
+               ->setWidgetUrl($wid_url)
+               ->setWidgetType($typewid)
+               ->setTransactionType($typetrans)
+               ->setWidgetVisibility($wid_visi)
+               ->setCoreOrganization($coreOrganization);
+    
+        $em->persist($widget);
+        $em->flush();
+    
+        // Set default widget style with defined attributes
+        $defaultStyle = [
+            ['backgroundColor' => '#FFFFFF'],  // default white background
+            ['textColor' => '#000000'],        // default black text
+            ['textFont' => 'Arial'],           // default Arial font
+            ['textSize' => '12px']             // default text size of 12px
+        ];
+
+        $widget_width='';
+        $widget_height='';
+        $widget_rank='';
+
+        
+    
+        $widget_config = new DashboardConfigurationWidget();
+        $widget_config->setDashboardWidgetId($widget)
+                      ->setNameFr($name_fr)
+                      ->setNameEn($name_eng)
+                      ->setWidgetStyle($defaultStyle)
+                      ->setWidgetWidth($widget_width)
+                      ->setWidgetHeight( $widget_height)
+                      ->setWidgetRank($widget_rank);
+    
+        $em->persist($widget_config);
+        $em->flush();
+    
+        return new JsonResponse(['message' => 'Widget added']);
+    }
+    
+
+    //GET All Widgets
+    public function widgetlist () : JsonResponse
+    {
+        $em = $this->doctrine->getManager();
+
+        $widget_dash_repo = $em->getRepository(DashboardWidget::class);
+        $widgets = $widget_dash_repo->findAll();
+
+        $jsonData = $this->serializeWidgets($widgets);
+
+        return new JsonResponse($jsonData);
+
+    }
+
+    //Widget By ID
+    public function widgetlistById ($id) : JsonResponse
+    {
+        $em = $this->doctrine->getManager();
+
+        $widget_dash_repo = $em->getRepository(DashboardWidget::class);
+        $widget = $widget_dash_repo->find($id);
+
+        $jsonData = $this->serializeWidget($widget);
+
+        return new JsonResponse($jsonData);
+
+    }
+
+    //Widget by org ID
+    public function widgetsByOrgId(int $orgId): JsonResponse
+    {
+        $em = $this->doctrine->getManager();
+        $widgetRepo = $em->getRepository(DashboardWidget::class);
+        
+        // Retrieve widgets based on the organization ID
+        $widgets = $widgetRepo->findBy(['core_organization' => $orgId]);
+
+        // Serialize the list of widgets
+        $jsonData = $this->serializeWidgets($widgets);
+
+        return new JsonResponse(['status' => true, 'data' => $jsonData]);
+    }
+
+    //WidgetConfig By ID (Dashboard Widget)
+    public function widgetconfiglist ($id) : JsonResponse
+    {
+        $em = $this->doctrine->getManager();
+
+
+        $widget_dash_config_repo = $em->getRepository(DashboardConfigurationWidget::class);
+
+        $widget_config = $widget_dash_config_repo->findOneBy(['dashboard_widget' => $id]);
+
+        $jsonData = $this->serializeWidgetconfig($widget_config);
+
+        return new JsonResponse($jsonData);
+
+    }
+
+    //Delete widget
+    public function deleteWidgetById($id): JsonResponse
+    {
+        $em = $this->doctrine->getManager();
+
+        $widget_dash_repo = $em->getRepository(DashboardWidget::class);
+        $widget = $widget_dash_repo->find($id);
+
+        $widget_dash_config_repo = $em->getRepository(DashboardConfigurationWidget::class);
+
+        $widget_config = $widget_dash_config_repo->findOneBy(['dashboard_widget' => $id]);
+
+        if (!$widget_config) {
+            return new JsonResponse(['error' => 'Widget configuration not found'], JsonResponse::HTTP_NOT_FOUND);
+        }
+
+        if (!$widget) {
+            return new JsonResponse(['error' => 'Widget not found'], JsonResponse::HTTP_NOT_FOUND);
+        }
+
+        $em->remove($widget);
+        $em->remove($widget_config);
+        $em->flush();
+
+        return new JsonResponse(['message' => 'Widget and their configuration deleted successfully'], JsonResponse::HTTP_OK);
+
+
+    }
+
+    //Update Widget
+    public function updatewidget($request, $id): JsonResponse
     {
         $em = $this->doctrine->getManager();
         $decoded = json_decode($request->getContent());
@@ -71,47 +240,118 @@ class WidgetService
         $desc_eng = $decoded->desc_eng;
         $wid_url = $decoded->wid_url;
 
+        $widget_dash_config_repo = $em->getRepository(DashboardConfigurationWidget::class);
+        $widget_config = $widget_dash_config_repo->findOneBy(['dashboard_widget' => $id]);;
+        
+        $widget_dash_repo = $em->getRepository(DashboardWidget::class);
+        $widget = $widget_dash_repo->find($id);
+        
+        $organizationRepository = $em->getRepository(CoreOrganizationType::class);
 
-        $coreOrganizationType = $em->getRepository(CoreOrganizationType::class)->findOneBy(['type' => $typeorg]);
+        $coreOrganizationType = $organizationRepository->findOneBy(['type' => $typeorg]);
 
-
-        $coreOrganization = null;
-        if ($coreOrganizationType) {
-            $coreOrganizations = $coreOrganizationType->getCoreOrganizationId();
-            $coreOrganization = $coreOrganizations->first();
-        }
-
-        $widget = new DashboardWidget();
+        $coreOrganization = $coreOrganizationType->getCoreOrganizationId()->first();
 
         $widget->setCoreOrganizationTypeId($coreOrganizationType)
-            ->setDescriptionEn($desc_eng)
-            ->setIsDefault(true)
-            ->setWidgetConditions('')
-            ->setDescriptionFr($desc_fr)
-            ->setWidgetUrl($wid_url)
-            ->setWidgetType($typewid)
-            ->setTransactionType($typetrans)
-            ->setWidgetVisibility($wid_visi)
-            ->setCoreOrganization($coreOrganization); 
+               ->setDescriptionEn($desc_eng)
+               ->setIsDefault(true)
+               ->setWidgetConditions('')
+               ->setDescriptionFr($desc_fr)
+               ->setWidgetUrl($wid_url)
+               ->setWidgetType($typewid)
+               ->setTransactionType($typetrans)
+               ->setWidgetVisibility($wid_visi);
 
+        $widget->setCoreOrganization($coreOrganization);
         $em->persist($widget);
         $em->flush();
 
-        $widget_config = new DashboardConfigurationWidget();
-
-     
         $widget_config->setDashboardWidgetId($widget)
-                    ->setNameFr($name_fr)
-                    ->setNameEn($name_eng)
-                    ->setWidgetStyle([])
-                    ->setWidgetWidth('')
-                    ->setWidgetHeight('')
-                    ->setWidgetRank('');
-
+                      ->setNameFr($name_fr)
+                      ->setNameEn($name_eng);
         $em->persist($widget_config);
         $em->flush();
+        
 
-        return new JsonResponse(['message' => 'Widget added']);
-
+        return new JsonResponse(['message' => 'Widget updated']);
     }
+
+    //GET widgets By organization type
+    public function WidgetType(string $organizationType): JsonResponse
+    {
+        $em = $this->doctrine->getManager();
+    
+        $organizationRepository = $em->getRepository(CoreOrganizationType::class);
+        $organizationTypeEntity = $organizationRepository->findOneBy(['type' => $organizationType]);
+    
+        if ($organizationTypeEntity) {
+            $dashboardWidgets = $organizationTypeEntity->getDashboardWidgets();
+    
+            $dashboardWidgetsArray = [];
+    
+            foreach ($dashboardWidgets as $dashboardWidget) {
+                $configurationWidgetId = null;
+                $configurationWidgets = $dashboardWidget->getDashboardConfigurationWidgetId();
+    
+                foreach ($configurationWidgets as $configurationWidget) {
+                    $configurationWidgetId = $configurationWidget->getId();
+                    break; // Stop iteration after the first ID
+                }
+    
+                $dashboardWidgetsArray[] = [
+                    'id' => $configurationWidgetId,
+                    'widget_type' => $dashboardWidget->getWidgetType(),
+                ];
+            }
+    
+            return new JsonResponse($dashboardWidgetsArray);
+        } else {
+            return new JsonResponse(['error' => 'Organization type not found'], JsonResponse::HTTP_NOT_FOUND);
+        }
+    }
+
+    //update widget config
+    public function updatewidgetConfig($request, $id): JsonResponse
+    {
+        $em = $this->doctrine->getManager();
+        $decoded = json_decode($request->getContent());
+
+        $name_fr = $decoded->name_fr;
+        $name_eng = $decoded->name_eng;
+        $wid_style = $decoded->wid_style;
+        $wid_width = $decoded->wid_width;
+        $wid_height = $decoded->wid_height;
+        $wid_rank = $decoded->wid_rank;
+
+        $widget_dash_config_repo = $em->getRepository(DashboardConfigurationWidget::class);
+        $widget_config = $widget_dash_config_repo->find($id);
+        
+
+        $widget_config->setNameFr($name_fr)
+                      ->setNameEn($name_eng)
+                      ->setWidgetStyle($wid_style)
+                      ->setWidgetWidth($wid_width )
+                      ->setWidgetHeight($wid_height)
+                      ->setWidgetRank( $wid_rank);
+        $em->persist($widget_config);
+        $em->flush();
+        
+        
+        return new JsonResponse(['message' => 'Widget configuration updated']);
+    }
+
+     // get widget config by id (dashboard configuration)
+     public function widgetconfigByID ($id) : JsonResponse
+     {
+        $em = $this->doctrine->getManager();
+ 
+         $widget_dash_config_repo = $em->getRepository(DashboardConfigurationWidget::class);
+ 
+         $widget_config = $widget_dash_config_repo->find($id);
+ 
+         $jsonData = $this->serializeWidgetconfig($widget_config);
+ 
+         return new JsonResponse($jsonData);
+ 
+     }
 }

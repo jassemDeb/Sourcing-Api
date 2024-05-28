@@ -32,7 +32,7 @@ class CoreOrganization
 
     public function __construct()
     {
-        $this->user_additionnal = new ArrayCollection();
+        $this->user_additionnals = new ArrayCollection();
         $this->coreOrganizationTypes = new ArrayCollection();
         $this->dashboard_configuration = new ArrayCollection();
         $this->dashboardWidgets = new ArrayCollection();
@@ -60,13 +60,13 @@ class CoreOrganization
      */
     public function getUserAdditionnalId(): Collection
     {
-        return $this->user_additionnal_id;
+        return $this->user_additionnal;
     }
 
     public function addUserAdditionnalId(UserAdditionnal $userAdditionnalId): static
     {
-        if (!$this->user_additionnal_id->contains($userAdditionnalId)) {
-            $this->user_additionnal_id->add($userAdditionnalId);
+        if (!$this->user_additionnal->contains($userAdditionnalId)) {
+            $this->user_additionnal->add($userAdditionnalId);
         }
 
         return $this;
@@ -74,7 +74,7 @@ class CoreOrganization
 
     public function removeUserAdditionnalId(UserAdditionnal $userAdditionnalId): static
     {
-        $this->user_additionnal_id->removeElement($userAdditionnalId);
+        $this->user_additionnal->removeElement($userAdditionnalId);
 
         return $this;
     }

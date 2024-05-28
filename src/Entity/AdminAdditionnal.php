@@ -14,6 +14,10 @@ class AdminAdditionnal extends User
     #[ORM\Column]
     private ?int $id = null;
 
+
+
+
+
     public function getId(): ?int
     {
         return $this->id;
@@ -24,4 +28,10 @@ class AdminAdditionnal extends User
         $this->id = $id;
         return $this;
     }
+
+
+
+  
+
+ 
 }

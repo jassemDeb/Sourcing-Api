@@ -42,6 +42,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private ?bool $isAdmin = null;
 
+    #[ORM\OneToOne(mappedBy: 'user', cascade: ['persist', 'remove'])]
+    private ?UserAdditionnal $userAdditionnal = null;
+
+
+
+
 
     
     
@@ -184,4 +190,30 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
         return $this;
     }
+
+    public function getUserAdditionnal(): ?UserAdditionnal
+    {
+        return $this->userAdditionnal;
+    }
+
+    public function setUserAdditionnal(?UserAdditionnal $userAdditionnal): static
+    {
+        // unset the owning side of the relation if necessary
+        if ($userAdditionnal === null && $this->userAdditionnal !== null) {
+            $this->userAdditionnal->setUser(null);
+        }
+
+        // set the owning side of the relation if necessary
+        if ($userAdditionnal !== null && $userAdditionnal->getUser() !== $this) {
+            $userAdditionnal->setUser($this);
+        }
+
+        $this->userAdditionnal = $userAdditionnal;
+
+        return $this;
+    }
+
+  
+
+
 }

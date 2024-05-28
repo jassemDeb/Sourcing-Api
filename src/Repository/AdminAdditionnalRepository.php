@@ -21,9 +21,9 @@ class AdminAdditionnalRepository extends ServiceEntityRepository
         parent::__construct($registry, AdminAdditionnal::class);
     }
 
-    public function findOneByEmail($email) : AdminAdditionnal
+    public function findOneByEmail($email)
     {
-        return $this->findBy(['email' => $email]);
+        return $this->findOneBy(['email' => $email]);
     }
 
 

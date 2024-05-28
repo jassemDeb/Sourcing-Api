@@ -36,6 +36,12 @@ class OrginizationController extends AbstractController
         return $this->orgService->orglist();
     }
 
+    #[Route('/orgsByName', name: 'orgsByName', methods: 'get')]
+    public function orgNameList () : JsonResponse
+    {
+        return $this->orgService->orgNameList();
+    }
+
     #[Route('/orgbyid/{id}', name: 'orglistid', methods: 'get')]
     public function orglistById ($id) : JsonResponse
     {
@@ -53,5 +59,17 @@ class OrginizationController extends AbstractController
     public function updateOrg($id_type,  Request $request): JsonResponse{
         
         return $this->orgService->updateOrg($id_type, $request);
+    }
+
+    #[Route('/assignUserToOrg/{userAdditionalId}/{organizationId}', name: 'assign_user_to_org', methods: 'put')]
+    public function assignUserToOrganization($userAdditionalId, $organizationId): JsonResponse
+    {
+        return $this->orgService->assignUserToOrganization($userAdditionalId, $organizationId);
+    }
+
+    #[Route('/getOrgForUser/{userAdditionalId}', name: 'get_org_for_user', methods: 'get')]
+    public function getOrganizationsByUserAdditionnalId($userAdditionalId): JsonResponse
+    {
+        return $this->orgService->getOrganizationsByUserAdditionnalId($userAdditionalId);
     }
 }

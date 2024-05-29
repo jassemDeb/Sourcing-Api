@@ -24,11 +24,18 @@ class WidgetController extends AbstractController
         $this->widgetService = $widgetService;
     }
 
-    //ADD new Widget
+    //ADD default Widget
     #[Route('/addwidget', name: 'addwidget', methods: 'post')]
     public function addwidget(Request $request): JsonResponse
     {
         return $this->widgetService->addwidget($request);
+    }
+
+    //ADD new Widget
+    #[Route('/addwidgetbyconfig', name: 'addwidgetbyconfig', methods: 'post')]
+    public function addWidgetWithConfig(Request $request): JsonResponse
+    {
+        return $this->widgetService->addWidgetWithConfig($request);
     }
 
     //GET All Widgets
@@ -53,6 +60,22 @@ class WidgetController extends AbstractController
     public function widgetconfiglist ($id) : JsonResponse
     {
         return $this->widgetService->widgetconfiglist($id);
+
+    }
+
+    //WidgetConfig By ID (Dashboard config)
+    #[Route('/widgetconfigbydashconfig/{id}', name: 'widgetconfigbydashconfig', methods: 'get')]
+    public function widgetconfiglistbyDashConfig ($id) : JsonResponse
+    {
+        return $this->widgetService->widgetconfiglistbyDashConfig($id);
+
+    }
+
+    //dashwidget id By ID (Dashboard widget config)
+    #[Route('/dashwidget/{id}', name: 'dashwidget', methods: 'get')]
+    public function widgetConfigDashboardWidgetIdByID ($id) : JsonResponse
+    {
+        return $this->widgetService->widgetConfigDashboardWidgetIdByID($id);
 
     }
 
@@ -95,11 +118,18 @@ class WidgetController extends AbstractController
 
     }
 
-        // get widget by org id 
+    // get widget by org id 
     #[Route('/widgetconfigByOrgID/{id}', name: 'widgetconfigByOrgID', methods: 'get')]
     public function widgetsByOrgId ($id) : JsonResponse
     {
        return $this->widgetService->widgetsByOrgId($id);
+    
+    }
+
+    #[Route('/widgetconfigDefault/{id}', name: 'widgetconfigDefault', methods: 'get')]
+    public function getDefaultConfigWidgetsByOrgType ($id) : JsonResponse
+    {
+       return $this->widgetService->getDefaultConfigWidgetsByOrgType($id);
     
     }
 }

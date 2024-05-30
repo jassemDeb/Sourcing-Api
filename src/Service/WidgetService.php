@@ -296,43 +296,45 @@ class WidgetService
         return new JsonResponse(['status' => true, 'data' => $jsonData]);
 
     }
+
+
     //Delete widget
-// Delete widget or widget configuration
-public function deleteWidgetById($id): JsonResponse
-{
-    $em = $this->doctrine->getManager();
+    // Delete widget or widget configuration
+    public function deleteWidgetById($id): JsonResponse
+    {
+        $em = $this->doctrine->getManager();
 
-    // Check if ID belongs to a DashboardConfigurationWidget
-    $widget_config_repo = $em->getRepository(DashboardConfigurationWidget::class);
-    $widget_config = $widget_config_repo->find($id);
+        // Check if ID belongs to a DashboardConfigurationWidget
+        $widget_config_repo = $em->getRepository(DashboardConfigurationWidget::class);
+        $widget_config = $widget_config_repo->find($id);
 
-    // Check if ID belongs to a DashboardWidget
-    $widget_repo = $em->getRepository(DashboardWidget::class);
-    $widget = $widget_repo->find($id);
+        // Check if ID belongs to a DashboardWidget
+        $widget_repo = $em->getRepository(DashboardWidget::class);
+        $widget = $widget_repo->find($id);
 
-    if ($widget_config) {
-        // If it's a DashboardConfigurationWidget, delete it along with its associated DashboardWidget
-        $associatedWidget = $widget_config->getDashboardWidgetId();
-        $em->remove($widget_config);  // Remove the configuration first
-        if ($associatedWidget) {
-            $em->remove($associatedWidget);  // Then remove the associated widget
+        if ($widget_config) {
+            // If it's a DashboardConfigurationWidget, delete it along with its associated DashboardWidget
+            $associatedWidget = $widget_config->getDashboardWidgetId();
+            $em->remove($widget_config);  // Remove the configuration first
+            if ($associatedWidget) {
+                $em->remove($associatedWidget);  // Then remove the associated widget
+            }
+            $em->flush();
+            return new JsonResponse(['message' => 'Dashboard Configuration Widget and associated Dashboard Widget deleted successfully'], JsonResponse::HTTP_OK);
+        } elseif ($widget) {
+            // If it's a DashboardWidget, delete it and all related DashboardConfigurationWidgets
+            $configurations = $widget_repo->findBy(['dashboard_widget' => $widget]);
+            foreach ($configurations as $config) {
+                $em->remove($config);
+            }
+            $em->remove($widget);
+            $em->flush();
+            return new JsonResponse(['message' => 'Dashboard Widget and all related configurations deleted successfully'], JsonResponse::HTTP_OK);
+        } else {
+            // If neither, return an error
+            return new JsonResponse(['error' => 'No widget or widget configuration found with provided ID'], JsonResponse::HTTP_NOT_FOUND);
         }
-        $em->flush();
-        return new JsonResponse(['message' => 'Dashboard Configuration Widget and associated Dashboard Widget deleted successfully'], JsonResponse::HTTP_OK);
-    } elseif ($widget) {
-        // If it's a DashboardWidget, delete it and all related DashboardConfigurationWidgets
-        $configurations = $widget_repo->findBy(['dashboard_widget' => $widget]);
-        foreach ($configurations as $config) {
-            $em->remove($config);
-        }
-        $em->remove($widget);
-        $em->flush();
-        return new JsonResponse(['message' => 'Dashboard Widget and all related configurations deleted successfully'], JsonResponse::HTTP_OK);
-    } else {
-        // If neither, return an error
-        return new JsonResponse(['error' => 'No widget or widget configuration found with provided ID'], JsonResponse::HTTP_NOT_FOUND);
     }
-}
 
 
     //Update Widget
@@ -525,10 +527,12 @@ public function deleteWidgetById($id): JsonResponse
             return new JsonResponse(['error' => 'DashboardConfigurationWidget not found'], JsonResponse::HTTP_NOT_FOUND);
         }
 
-        // Get the DashboardWidget ID
-        $dashboardWidgetId = $widgetConfig->getDashboardWidgetId()->getId();
+        // Get the DashboardWidget 
+        $dashboardWidgetId = $widgetConfig->getDashboardWidgetId();
 
-        return new JsonResponse(['dashboard_widget_id' => $dashboardWidgetId]);
+        $jsonData = $this->serializeWidget($dashboardWidgetId);
+
+        return new JsonResponse([$jsonData]);
     }
 
      

@@ -157,6 +157,7 @@ class WidgetService
         $decoded = json_decode($request->getContent());
 
         // Extract parameters from the decoded request
+        $id = $decoded->id;
         $typeorg = $decoded->typeorg;
         $typetrans = $decoded->typetrans;
         $typewid = $decoded->typewid;
@@ -182,24 +183,28 @@ class WidgetService
         $coreOrganizations = $coreOrganizationType->getCoreOrganizationId();
         $coreOrganization = $coreOrganizations ? $coreOrganizations->first() : null;
 
+        $dashboardConfiguration = $em->getRepository(DashboardConfiguration::class)->find($dashboardConfigurationId);
+        $dashboardConfigurationWidget = $em->getRepository(DashboardConfigurationWidget::class)->find($id);
+
+        $default_widget= $dashboardConfigurationWidget->getDashboardWidgetId();
         // Create the DashboardWidget entity
         $widget = new DashboardWidget();
         $widget->setCoreOrganizationTypeId($coreOrganizationType)
-            ->setDescriptionEn($desc_eng)
+            ->setDescriptionEn($default_widget->getDescriptionEn())
             ->setIsDefault(false) // Set isDefault to false
             ->setWidgetConditions('')
-            ->setDescriptionFr($desc_fr)
-            ->setWidgetUrl($wid_url)
-            ->setWidgetType($typewid)
-            ->setTransactionType($typetrans)
-            ->setWidgetVisibility($wid_visi)
+            ->setDescriptionFr($default_widget->getDescriptionFr())
+            ->setWidgetUrl($default_widget->getWidgetUrl())
+            ->setWidgetType($default_widget->getWidgetType())
+            ->setTransactionType($default_widget->getTransactionType())
+            ->setWidgetVisibility($default_widget->getWidgetVisibility())
             ->setCoreOrganization($coreOrganization);
 
         $em->persist($widget);
         $em->flush();
 
         // Retrieve the DashboardConfiguration entity
-        $dashboardConfiguration = $em->getRepository(DashboardConfiguration::class)->find($dashboardConfigurationId);
+
         if (!$dashboardConfiguration) {
             return new JsonResponse(['error' => 'DashboardConfiguration not found'], JsonResponse::HTTP_NOT_FOUND);
         }
@@ -323,7 +328,7 @@ class WidgetService
             return new JsonResponse(['message' => 'Dashboard Configuration Widget and associated Dashboard Widget deleted successfully'], JsonResponse::HTTP_OK);
         } elseif ($widget) {
             // If it's a DashboardWidget, delete it and all related DashboardConfigurationWidgets
-            $configurations = $widget_repo->findBy(['dashboard_widget' => $widget]);
+            $configurations = $widget_config_repo->findBy(['dashboard_widget' => $widget]);
             foreach ($configurations as $config) {
                 $em->remove($config);
             }

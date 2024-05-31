@@ -63,7 +63,7 @@ class WidgetController extends AbstractController
 
     }
 
-    //WidgetConfig By ID (Dashboard config)
+    //WidgetConfigs By ID (Dashboard config)
     #[Route('/widgetconfigbydashconfig/{id}', name: 'widgetconfigbydashconfig', methods: 'get')]
     public function widgetconfiglistbyDashConfig ($id) : JsonResponse
     {

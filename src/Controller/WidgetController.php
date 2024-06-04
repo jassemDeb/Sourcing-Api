@@ -46,6 +46,15 @@ class WidgetController extends AbstractController
 
     }
 
+        //GET All Widgets
+        #[Route('/widgetsconfig', name: 'widgetsconfig', methods: 'get')]
+        public function widgetConfigslist () : JsonResponse
+        {
+            return $this->widgetService->widgetConfigslist();
+    
+        }
+    
+
 
     //Widget By ID
     #[Route('/widgetsById/{id}', name: 'widgetsById', methods: 'get')]

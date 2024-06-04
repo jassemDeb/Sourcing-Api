@@ -223,7 +223,7 @@ class WidgetService
         $em->persist($widgetConfig);
         $em->flush();
 
-        return new JsonResponse(['message' => 'Widget added']);
+        return new JsonResponse(['message' => 'Widget added', 'widgetId' => $widgetConfig->getId()]);
     }
 
     //GET All Widgets
@@ -239,6 +239,20 @@ class WidgetService
         return new JsonResponse($jsonData);
 
     }
+
+        //GET All Widgets config
+        public function widgetConfigslist () : JsonResponse
+        {
+            $em = $this->doctrine->getManager();
+    
+            $widget_config_repo = $em->getRepository(DashboardConfigurationWidget::class);
+            $widgetsConfig = $widget_config_repo->findAll();
+    
+            $jsonData = $this->serializeWidgetconfigs($widgetsConfig);
+    
+            return new JsonResponse($jsonData);
+    
+        }
 
     //Widget By ID
     public function widgetlistById ($id) : JsonResponse
